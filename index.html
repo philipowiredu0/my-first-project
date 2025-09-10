@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>To-Do App - Phase 9.5 (Full Working)</title>
+
+  <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body { min-height:100vh; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .sidebar { 
+      width: 240px; 
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 25%, #ffa8a8 50%, #ffb3ba 75%, #ffc0cb 100%); 
+      color: white; 
+      padding: 20px; 
+      display: none; 
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    .sidebar h2 { 
+      font-size: 1.25rem; 
+      margin-bottom: 1rem; 
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .sidebar .list-group-item { 
+      background: transparent; 
+      color: white; 
+      border: none; 
+      display:flex; 
+      gap:0.75rem; 
+      align-items:center; 
+      border-radius: 8px;
+      margin-bottom: 4px;
+      transition: all 0.3s ease;
+    }
+    .sidebar .list-group-item:hover { 
+      background: rgba(255,255,255,0.2); 
+      transform: translateX(4px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .sidebar .list-group-item.text-danger {
+      color: white !important;
+    }
+    .sidebar .list-group-item.text-danger:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: white !important;
+    }
+    .content { flex:1; padding: 24px; overflow:auto; }
+    .hidden { display:none !important; }
+    
+    /* App layout */
+    body { display: flex; }
+    .badge-low { background-color:#198754; }
+    .badge-medium { background-color:#f59e0b; color:#000; }
+    .badge-high { background-color:#dc3545; }
+    .card .small-muted { color:#6c757d; font-size:0.85rem; }
+    .form-inline-row { display:flex; gap:8px; align-items:center; }
+    .dashboard-card:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; 
+      background-color: #f8f9fa;
+    }
+    .dashboard-card h5 { margin-bottom: 0.5rem; }
+    .dashboard-card h5 i { margin-right: 0.5rem; }
+    
+    /* Login Page Background - Split Screen Layout */
+    #authPage {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      display: flex;
+      z-index: 1000;
+    }
+    
+    /* When login page is hidden, make sure it's completely hidden */
+    #authPage.hidden {
+      display: none !important;
+    }
+    
+    /* Left side - Welcome section */
+    .auth-welcome {
+      flex: 1;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 25%, #ffa8a8 50%, #ffb3ba 75%, #ffc0cb 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      position: relative;
+      color: white;
+    }
+    
+    /* Right side - Login form */
+    .auth-form-section {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    /* Welcome content styling */
+    .welcome-content {
+      text-align: center;
+      max-width: 500px;
+    }
+    
+    .welcome-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .welcome-subtitle {
+      font-size: 1.3rem;
+      margin-bottom: 2.5rem;
+      opacity: 0.9;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .welcome-icons {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    
+    .welcome-icon {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      animation: gentle-float 4s ease-in-out infinite;
+    }
+    
+    .welcome-icon:nth-child(1) { animation-delay: 0s; }
+    .welcome-icon:nth-child(2) { animation-delay: 1s; }
+    .welcome-icon:nth-child(3) { animation-delay: 2s; }
+    .welcome-icon:nth-child(4) { animation-delay: 1.5s; }
+    
+    @keyframes gentle-float {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-10px) scale(1.05); }
+    }
+    
+    /* Login form container */
+    .auth-form-container {
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      #authPage {
+        flex-direction: column;
+      }
+      
+      .auth-welcome {
+        min-height: 40vh;
+        padding: 2rem;
+      }
+      
+      .welcome-title {
+        font-size: 2.5rem;
+      }
+      
+      .welcome-subtitle {
+        font-size: 1.1rem;
+      }
+      
+      .welcome-icons {
+        gap: 1rem;
+      }
+      
+      .welcome-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+      }
+    }
+    
+    
+    /* Login form styling */
+    .auth-form-container .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border-radius: 25px;
+      padding: 2.5rem;
+    }
+    
+    .auth-form-container .card h3 {
+      background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+    
+    .auth-form-container .btn-primary {
+      background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .auth-form-container .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+      background: linear-gradient(135deg, #ff5252, #ff7979);
+    }
+    
+    .auth-form-container .btn-link {
+      color: #ff6b6b;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .auth-form-container .btn-link:hover {
+      color: #ff5252;
+      transform: translateY(-1px);
+    }
+    
+    .auth-form-container .form-control {
+      border-radius: 10px;
+      border: 2px solid #f0f0f0;
+      padding: 12px 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .auth-form-container .form-control:focus {
+      border-color: #ff6b6b;
+      box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+    }
+
+    /* Small icon row in login header */
+    .login-icons-row { display:flex; justify-content:center; gap:12px; }
+    .login-icon { 
+      width: 36px; height: 36px; border-radius:50%; 
+      display:flex; align-items:center; justify-content:center; 
+      background:#fff; color:#ff6b6b; border:1px solid #ffe1e1; 
+      box-shadow: 0 4px 10px rgba(255,107,107,0.15);
+    }
+    
+    @media (max-width: 767px) {
+      .sidebar { 
+        display:none; 
+        position: fixed; 
+        z-index: 30; 
+        left:0; 
+        top:0; 
+        bottom:0; 
+        box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <h2><i class="bi bi-check2-square"></i> To-Do App</h2>
+    <div class="list-group">
+      <button class="list-group-item" onclick="showSection('dashboard')"><i class="bi bi-house"></i> Dashboard</button>
+      <button class="list-group-item" onclick="showSection('todos')"><i class="bi bi-list-task"></i> Tasks</button>
+      <button class="list-group-item" onclick="showSection('members')"><i class="bi bi-people"></i> Members</button>
+      <button class="list-group-item" onclick="showSection('payments')"><i class="bi bi-credit-card"></i> Payments</button>
+      <button class="list-group-item text-danger" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="content container" id="content">
+
+    <!-- Auth Page -->
+    <div id="authPage">
+      <!-- Left side - Welcome section -->
+      <div class="auth-welcome">
+        <div class="welcome-content">
+          <h1 class="welcome-title">Welcome to To-Do App</h1>
+          <p class="welcome-subtitle">Organize your tasks, manage your time, and stay productive</p>
+          
+          <div class="welcome-icons">
+            <div class="welcome-icon">
+              <i class="bi bi-clipboard-check"></i>
+            </div>
+            <div class="welcome-icon">
+              <i class="bi bi-calendar-event"></i>
+            </div>
+            <div class="welcome-icon">
+              <i class="bi bi-list-task"></i>
+            </div>
+            <div class="welcome-icon">
+              <i class="bi bi-people"></i>
+            </div>
+          </div>
+          
+          <p class="small">Stay productive. Make every checklist count.</p>
+        </div>
+      </div>
+      
+      <!-- Right side - Login form -->
+      <div class="auth-form-section">
+        <div class="auth-form-container">
+          <div class="card shadow-sm">
+            <div class="text-center mb-4">
+              <i class="bi bi-check2-square text-primary" style="font-size: 3rem;"></i>
+              <h3 class="mt-2 mb-1" id="authTitle">Log In</h3>
+              <p class="text-muted small">Please login to continue to your account</p>
+            </div>
+            <div id="errorMsg" class="text-danger text-center mb-2"></div>
+
+            <form id="authForm" autocomplete="off">
+              <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input id="authUsername" class="form-control" type="text" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input id="authPassword" class="form-control" type="password" required />
+              </div>
+              <div class="mb-3 form-check" id="rememberMeGroup">
+                <input id="rememberMe" class="form-check-input" type="checkbox" />
+                <label class="form-check-label">Remember me</label>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button id="authBtn" type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right"></i> Login</button>
+                <button id="toggleAuthBtn" type="button" class="btn btn-link" onclick="toggleAuth()">Sign Up</button>
+              </div>
+            </form>
+
+            <div class="mt-3 text-center small text-muted">
+              <span id="toggleText">Don't have an account?</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Welcome, <span id="usernameDisplay"></span></h2>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card p-3 shadow-sm dashboard-card" onclick="showSection('todos')" style="cursor: pointer; transition: all 0.2s ease;">
+            <h5><i class="bi bi-list-task"></i> Tasks</h5>
+            <p class="small-muted">Manage tasks, due dates & priority.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-3 shadow-sm dashboard-card" onclick="showSection('members')" style="cursor: pointer; transition: all 0.2s ease;">
+            <h5><i class="bi bi-people"></i> Members</h5>
+            <p class="small-muted">Add, edit and manage members.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-3 shadow-sm dashboard-card" onclick="showSection('payments')" style="cursor: pointer; transition: all 0.2s ease;">
+            <h5><i class="bi bi-credit-card"></i> Payments</h5>
+            <p class="small-muted">Record and track payments.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div id="todos" class="hidden">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-list-task"></i> Tasks</h3>
+      </div>
+
+      <!-- add/edit form -->
+      <div class="card p-3 mb-3 shadow-sm">
+        <form id="todoForm">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Task</label>
+              <input id="todoTask" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Due Date</label>
+              <input id="todoDueDate" type="date" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Priority</label>
+              <select id="todoPriority" class="form-select">
+                <option>Low</option>
+                <option selected>Medium</option>
+                <option>High</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">(optional) Description</label>
+              <input id="todoDesc" class="form-control" />
+            </div>
+          </div>
+
+          <div class="mt-3 d-flex align-items-center gap-2">
+            <button id="todoSubmitBtn" class="btn btn-success"><i class="bi bi-plus-circle"></i> Add Task</button>
+            <button id="todoCancelBtn" type="button" class="btn btn-secondary d-none">Cancel</button>
+            <div class="ms-auto small text-muted" id="todoCount"></div>
+          </div>
+        </form>
+      </div>
+
+      <!-- filters + search -->
+      <div class="row mb-3 g-2">
+        <div class="col-md-3">
+          <label class="form-label">Status Filter</label>
+          <select id="todoFilter" class="form-select" onchange="renderTodos()">
+            <option value="all">All</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Priority Filter</label>
+          <select id="priorityFilter" class="form-select" onchange="renderTodos()">
+            <option value="all">All</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Search</label>
+          <div class="input-group">
+            <input id="todoSearch" class="form-control" placeholder="Search tasks or description..." onkeyup="renderTodos()" />
+            <button class="btn btn-outline-secondary" type="button" onclick="clearTodoSearch()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- list -->
+      <div id="todoList" class="row g-3"></div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div id="members" class="hidden">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-people"></i> Members</h3>
+      </div>
+
+      <div class="card p-3 mb-3 shadow-sm">
+        <form id="memberForm">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Name</label>
+              <input id="memberName" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input id="memberEmail" type="email" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Date of Birth</label>
+              <input id="memberDob" type="date" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description</label>
+              <input id="memberDesc" class="form-control" />
+            </div>
+          </div>
+
+          <div class="mt-3 d-flex gap-2">
+            <button id="memberSubmitBtn" class="btn btn-success"><i class="bi bi-person-plus"></i> Add Member</button>
+            <button id="memberCancelBtn" type="button" class="btn btn-secondary d-none">Cancel</button>
+            <div class="ms-auto small text-muted" id="memberCount"></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Search</label>
+        <div class="input-group">
+          <input id="memberSearch" class="form-control" placeholder="Search name, email or description..." onkeyup="renderMembers()" />
+          <button class="btn btn-outline-secondary" type="button" onclick="clearMemberSearch()">Clear</button>
+        </div>
+      </div>
+
+      <div id="memberList" class="row g-3"></div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div id="payments" class="hidden">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-credit-card"></i> Payments</h3>
+      </div>
+
+      <div class="card p-3 mb-3 shadow-sm">
+        <form id="paymentForm">
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Payment Mode</label>
+              <select id="paymentMode" class="form-select" required>
+                <option value="">Select</option>
+                <option>Cash</option>
+                <option>Card</option>
+                <option>Bank Transfer</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Amount</label>
+              <input id="paymentAmount" type="number" step="any" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Reference</label>
+              <input id="paymentRef" class="form-control" required />
+            </div>
+          </div>
+
+          <div class="mt-3 d-flex gap-2">
+            <button id="paymentSubmitBtn" class="btn btn-success"><i class="bi bi-plus-circle"></i> Add Payment</button>
+            <button id="paymentCancelBtn" type="button" class="btn btn-secondary d-none">Cancel</button>
+            <div class="ms-auto small text-muted" id="paymentCount"></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Search</label>
+        <div class="input-group">
+          <input id="paymentSearch" class="form-control" placeholder="Search mode, amount or reference..." onkeyup="renderPayments()" />
+          <button class="btn btn-outline-secondary" type="button" onclick="clearPaymentSearch()">Clear</button>
+        </div>
+      </div>
+
+      <div id="paymentList" class="row g-3"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- App logic -->
+  <script>
+    // Global state
+    let currentUser = null;
+    let todos = [];
+    let members = [];
+    let payments = [];
+
+    let editingTodoId = null;
+    let editingMemberId = null;
+    let editingPaymentId = null;
+
+    // Utilities
+    function saveTodos() { localStorage.setItem('todos_' + currentUser, JSON.stringify(todos)); }
+    function saveMembers() { localStorage.setItem('members_' + currentUser, JSON.stringify(members)); }
+    function savePayments() { localStorage.setItem('payments_' + currentUser, JSON.stringify(payments)); }
+
+    // -------------------------
+    // Authentication
+    // -------------------------
+    let loginMode = true; // true = login, false = signup
+
+    function toggleAuth() {
+      loginMode = !loginMode;
+      const titleElement = document.getElementById('authTitle');
+      if (loginMode) {
+        titleElement.innerHTML = 'Log In';
+        titleElement.parentElement.querySelector('p').innerText = 'Please login to continue to your account';
+      } else {
+        titleElement.innerHTML = 'Sign Up';
+        titleElement.parentElement.querySelector('p').innerText = 'Create your account and start organizing your tasks today';
+      }
+      document.getElementById('authBtn').innerHTML = loginMode ? '<i class="bi bi-box-arrow-in-right"></i> Login' : '<i class="bi bi-person-plus"></i> Sign Up';
+      document.getElementById('toggleAuthBtn').innerText = loginMode ? 'Sign Up' : 'Login';
+      document.getElementById('toggleText').innerText = loginMode ? "Don't have an account?" : "Already have an account?";
+      document.getElementById('rememberMeGroup').style.display = loginMode ? 'block' : 'none';
+      document.getElementById('errorMsg').innerText = '';
+    }
+
+    // Auth form handler
+    document.getElementById('authForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const username = document.getElementById('authUsername').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const remember = document.getElementById('rememberMe').checked;
+      if (!username) { document.getElementById('errorMsg').innerText = 'Please enter username'; return; }
+
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+
+      if (loginMode) {
+        // Login
+        if (users[username] && users[username] === password) {
+          currentUser = username;
+          
+          // Enhanced Remember Me functionality
+          if (remember) {
+            localStorage.setItem('rememberUser', username);
+            localStorage.setItem('rememberedUsername', username);
+            localStorage.setItem('rememberedPassword', password);
+            localStorage.setItem('rememberMeChecked', 'true');
+            console.log('Login credentials saved for next time');
+          } else {
+            localStorage.removeItem('rememberUser');
+            localStorage.removeItem('rememberedUsername');
+            localStorage.removeItem('rememberedPassword');
+            localStorage.removeItem('rememberMeChecked');
+            console.log('Login credentials cleared');
+          }
+          
+          afterLogin();
+        } else {
+          document.getElementById('errorMsg').innerText = 'Invalid username or password';
+        }
+      } else {
+        // Sign up
+        if (users[username]) {
+          document.getElementById('errorMsg').innerText = 'User already exists';
+          return;
+        }
+        users[username] = password;
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        // If remember me is checked during signup, save the details
+        if (remember) {
+          localStorage.setItem('rememberedUsername', username);
+          localStorage.setItem('rememberedPassword', password);
+          localStorage.setItem('rememberMeChecked', 'true');
+        }
+        
+        document.getElementById('errorMsg').innerText = 'Account created — you can now login';
+        toggleAuth();
+      }
+    });
+
+    function afterLogin() {
+      // show UI and load user data
+      document.getElementById('authPage').classList.add('hidden');
+      document.getElementById('sidebar').style.display = 'block';
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('usernameDisplay').innerText = currentUser;
+
+      // load saved data
+      todos = JSON.parse(localStorage.getItem('todos_' + currentUser) || '[]');
+      members = JSON.parse(localStorage.getItem('members_' + currentUser) || '[]');
+      payments = JSON.parse(localStorage.getItem('payments_' + currentUser) || '[]');
+
+      // restore filters and searches
+      restoreFiltersAndSearch();
+
+      // render all
+      renderTodos();
+      renderMembers();
+      renderPayments();
+    }
+
+    // Auto-login if remember
+    window.addEventListener('load', function () {
+      const remembered = localStorage.getItem('rememberUser');
+      const rememberedUsername = localStorage.getItem('rememberedUsername');
+      const rememberedPassword = localStorage.getItem('rememberedPassword');
+      const rememberMeChecked = localStorage.getItem('rememberMeChecked');
+      
+      // Restore form fields if remember me was checked
+      if (rememberedUsername && rememberMeChecked === 'true') {
+        document.getElementById('authUsername').value = rememberedUsername;
+        document.getElementById('authPassword').value = rememberedPassword;
+        document.getElementById('rememberMe').checked = true;
+        console.log('Login credentials restored from previous session');
+      }
+      
+      // Auto-login if user was remembered
+      if (remembered) {
+        currentUser = remembered;
+        afterLogin();
+      }
+    });
+
+    function logout() {
+      currentUser = null;
+      todos = []; members = []; payments = [];
+      
+      // Hide app content and show login
+      document.getElementById('sidebar').style.display = 'none';
+      document.querySelectorAll('.content > div').forEach(div => div.classList.add('hidden'));
+      document.getElementById('authPage').classList.remove('hidden');
+      
+      // Clear remembered credentials
+      localStorage.removeItem('rememberUser');
+      localStorage.removeItem('rememberedUsername');
+      localStorage.removeItem('rememberedPassword');
+      localStorage.removeItem('rememberMeChecked');
+      
+      // clear auth fields and states
+      document.getElementById('authUsername').value = '';
+      document.getElementById('authPassword').value = '';
+      document.getElementById('rememberMe').checked = false;
+      document.getElementById('errorMsg').innerText = '';
+      toggleToLoginView();
+    }
+
+    function toggleToLoginView() {
+      if (!loginMode) toggleAuth();
+    }
+
+    // -------------------------
+    // Restore search & filters
+    // -------------------------
+    function restoreFiltersAndSearch() {
+      if (!currentUser) return;
+      document.getElementById('todoSearch').value = localStorage.getItem('todoSearch_' + currentUser) || '';
+      document.getElementById('todoFilter').value = localStorage.getItem('todoFilter_' + currentUser) || 'all';
+      document.getElementById('priorityFilter').value = localStorage.getItem('priorityFilter_' + currentUser) || 'all';
+      document.getElementById('memberSearch').value = localStorage.getItem('memberSearch_' + currentUser) || '';
+      document.getElementById('paymentSearch').value = localStorage.getItem('paymentSearch_' + currentUser) || '';
+    }
+
+    // -------------------------
+    // TASKS: add / edit / delete / toggle
+    // -------------------------
+    const todoForm = document.getElementById('todoForm');
+    const todoSubmitBtn = document.getElementById('todoSubmitBtn');
+    const todoCancelBtn = document.getElementById('todoCancelBtn');
+
+    todoForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!currentUser) { alert('Please login first'); return; }
+
+      const task = document.getElementById('todoTask').value.trim();
+      const desc = document.getElementById('todoDesc').value.trim();
+      const dueDate = document.getElementById('todoDueDate').value || '';
+      const priority = document.getElementById('todoPriority').value || 'Medium';
+
+      if (!task) { alert('Task required'); return; }
+
+      if (editingTodoId) {
+        // update existing
+        const idx = todos.findIndex(t => t.id === editingTodoId);
+        if (idx >= 0) {
+          todos[idx].task = task;
+          todos[idx].desc  = desc;
+          todos[idx].dueDate = dueDate;
+          todos[idx].priority = priority;
+        }
+        editingTodoId = null;
+        todoSubmitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Add Task';
+        todoCancelBtn.classList.add('d-none');
+      } else {
+        // create new
+        const todo = { id: Date.now(), task, desc, dueDate, priority, completed: false };
+        todos.unshift(todo); // newest at top
+      }
+
+      saveTodos();
+      renderTodos();
+      todoForm.reset();
+    });
+
+    todoCancelBtn.addEventListener('click', function () {
+      editingTodoId = null;
+      todoForm.reset();
+      todoSubmitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Add Task';
+      todoCancelBtn.classList.add('d-none');
+    });
+
+    function editTodo(id) {
+      const t = todos.find(x => x.id === id);
+      if (!t) return;
+      editingTodoId = id;
+      document.getElementById('todoTask').value = t.task;
+      document.getElementById('todoDesc').value = t.desc;
+      document.getElementById('todoDueDate').value = t.dueDate || '';
+      document.getElementById('todoPriority').value = t.priority;
+      todoSubmitBtn.innerHTML = '<i class="bi bi-save"></i> Save Changes';
+      todoCancelBtn.classList.remove('d-none');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteTodo(id) {
+      if (!confirm('Delete this task?')) return;
+      todos = todos.filter(t => t.id !== id);
+      saveTodos();
+      renderTodos();
+    }
+
+    function toggleTodoCompleted(id) {
+      const t = todos.find(x => x.id === id);
+      if (!t) return;
+      t.completed = !t.completed;
+      saveTodos();
+      renderTodos();
+    }
+
+    // Render todos with search + status filter + priority filter (persistent)
+    function renderTodos() {
+      if (!currentUser) return;
+      // grab filters
+      const search = (document.getElementById('todoSearch').value || '').toLowerCase();
+      const status = document.getElementById('todoFilter').value || 'all';
+      const pFilter = document.getElementById('priorityFilter').value || 'all';
+
+      // save persistence
+      localStorage.setItem('todoSearch_' + currentUser, search);
+      localStorage.setItem('todoFilter_' + currentUser, status);
+      localStorage.setItem('priorityFilter_' + currentUser, pFilter);
+
+      let list = todos.slice(); // copy
+      // search
+      if (search) {
+        list = list.filter(t => (t.task || '').toLowerCase().includes(search) || (t.desc || '').toLowerCase().includes(search));
+      }
+      // status filter
+      if (status === 'completed') list = list.filter(t => t.completed);
+      else if (status === 'pending') list = list.filter(t => !t.completed);
+
+      // priority filter
+      if (pFilter !== 'all') list = list.filter(t => t.priority === pFilter);
+
+      // render
+      const todoList = document.getElementById('todoList');
+      todoList.innerHTML = '';
+      document.getElementById('todoCount').innerText = `${list.length} shown • ${todos.length} total`;
+
+      list.forEach(t => {
+        const col = document.createElement('div');
+        col.className = 'col-sm-6 col-lg-4';
+        col.innerHTML = `
+          <div class="card p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  <input class="form-check-input me-2" type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodoCompleted(${t.id})" />
+                  <strong ${t.completed ? 'style="text-decoration:line-through;color:#6c757d;"' : ''}>${escapeHtml(t.task)}</strong>
+                </div>
+                <div class="small text-muted mt-1">${escapeHtml(t.desc || '')}</div>
+                <div class="small-muted mt-2">Due: ${t.dueDate || 'No date'} &nbsp; • &nbsp; 
+                  <span class="badge ${t.priority === 'High' ? 'badge-high' : t.priority === 'Medium' ? 'badge-medium' : 'badge-low'}">${t.priority}</span>
+                </div>
+              </div>
+              <div class="d-flex flex-column gap-2 ms-2">
+                <button class="btn btn-sm btn-outline-warning" title="Edit" onclick="editTodo(${t.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteTodo(${t.id})"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+        todoList.appendChild(col);
+      });
+    }
+
+    // -------------------------
+    // MEMBERS
+    // -------------------------
+    const memberForm = document.getElementById('memberForm');
+    const memberCancelBtn = document.getElementById('memberCancelBtn');
+
+    memberForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!currentUser) { alert('Please login first'); return; }
+
+      const name = document.getElementById('memberName').value.trim();
+      const email = document.getElementById('memberEmail').value.trim();
+      const dob = document.getElementById('memberDob').value || '';
+      const desc = document.getElementById('memberDesc').value.trim() || '';
+
+      if (!name || !email) { alert('Name and Email required'); return; }
+
+      if (editingMemberId) {
+        const idx = members.findIndex(m => m.id === editingMemberId);
+        if (idx >= 0) {
+          members[idx].name = name;
+          members[idx].email = email;
+          members[idx].dob = dob;
+          members[idx].desc = desc;
+        }
+        editingMemberId = null;
+        memberCancelBtn.classList.add('d-none');
+        document.getElementById('memberSubmitBtn').innerText = 'Add Member';
+      } else {
+        members.unshift({ id: Date.now(), name, email, dob, desc });
+      }
+
+      saveMembers();
+      renderMembers();
+      memberForm.reset();
+    });
+
+    memberCancelBtn.addEventListener('click', function () {
+      editingMemberId = null;
+      memberForm.reset();
+      memberCancelBtn.classList.add('d-none');
+      document.getElementById('memberSubmitBtn').innerText = 'Add Member';
+    });
+
+    function editMember(id) {
+      const m = members.find(x => x.id === id);
+      if (!m) return;
+      editingMemberId = id;
+      document.getElementById('memberName').value = m.name;
+      document.getElementById('memberEmail').value = m.email;
+      document.getElementById('memberDob').value = m.dob || '';
+      document.getElementById('memberDesc').value = m.desc || '';
+      document.getElementById('memberSubmitBtn').innerText = 'Save Changes';
+      memberCancelBtn.classList.remove('d-none');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteMember(id) {
+      if (!confirm('Delete this member?')) return;
+      members = members.filter(m => m.id !== id);
+      saveMembers();
+      renderMembers();
+    }
+
+    function renderMembers() {
+      if (!currentUser) return;
+      const search = (document.getElementById('memberSearch').value || '').toLowerCase();
+      localStorage.setItem('memberSearch_' + currentUser, search);
+
+      let list = members.slice();
+      if (search) {
+        list = list.filter(m => (m.name || '').toLowerCase().includes(search) || (m.email || '').toLowerCase().includes(search) || (m.desc || '').toLowerCase().includes(search));
+      }
+
+      document.getElementById('memberCount').innerText = `${list.length} shown • ${members.length} total`;
+      const container = document.getElementById('memberList');
+      container.innerHTML = '';
+      list.forEach(m => {
+        const col = document.createElement('div');
+        col.className = 'col-sm-6 col-lg-4';
+        col.innerHTML = `
+          <div class="card p-3 shadow-sm">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>${escapeHtml(m.name)}</strong><br>
+                <div class="small text-muted">${escapeHtml(m.email)}</div>
+                <div class="small-muted mt-2">DOB: ${m.dob || 'N/A'}</div>
+                <div class="small-muted mt-1">${escapeHtml(m.desc || '')}</div>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <button class="btn btn-sm btn-outline-warning" onclick="editMember(${m.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMember(${m.id})"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    function clearMemberSearch() {
+      document.getElementById('memberSearch').value = '';
+      localStorage.removeItem('memberSearch_' + currentUser);
+      renderMembers();
+    }
+
+    // -------------------------
+    // PAYMENTS
+    // -------------------------
+    const paymentForm = document.getElementById('paymentForm');
+    const paymentCancelBtn = document.getElementById('paymentCancelBtn');
+
+    paymentForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!currentUser) { alert('Please login first'); return; }
+
+      const mode = document.getElementById('paymentMode').value;
+      const amount = document.getElementById('paymentAmount').value;
+      const ref = document.getElementById('paymentRef').value.trim();
+
+      if (!mode || !amount || !ref) { alert('All payment fields required'); return; }
+
+      if (editingPaymentId) {
+        const idx = payments.findIndex(p => p.id === editingPaymentId);
+        if (idx >= 0) {
+          payments[idx].mode = mode;
+          payments[idx].amount = amount;
+          payments[idx].ref = ref;
+        }
+        editingPaymentId = null;
+        paymentCancelBtn.classList.add('d-none');
+        document.getElementById('paymentSubmitBtn').innerText = 'Add Payment';
+      } else {
+        payments.unshift({ id: Date.now(), mode, amount, ref });
+      }
+
+      savePayments();
+      renderPayments();
+      paymentForm.reset();
+    });
+
+    paymentCancelBtn.addEventListener('click', function () {
+      editingPaymentId = null;
+      paymentForm.reset();
+      paymentCancelBtn.classList.add('d-none');
+      document.getElementById('paymentSubmitBtn').innerText = 'Add Payment';
+    });
+
+    function editPayment(id) {
+      const p = payments.find(x => x.id === id);
+      if (!p) return;
+      editingPaymentId = id;
+      document.getElementById('paymentMode').value = p.mode;
+      document.getElementById('paymentAmount').value = p.amount;
+      document.getElementById('paymentRef').value = p.ref;
+      document.getElementById('paymentSubmitBtn').innerText = 'Save Changes';
+      paymentCancelBtn.classList.remove('d-none');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deletePayment(id) {
+      if (!confirm('Delete this payment?')) return;
+      payments = payments.filter(p => p.id !== id);
+      savePayments();
+      renderPayments();
+    }
+
+    function renderPayments() {
+      if (!currentUser) return;
+      const search = (document.getElementById('paymentSearch').value || '').toLowerCase();
+      localStorage.setItem('paymentSearch_' + currentUser, search);
+
+      let list = payments.slice();
+      if (search) {
+        list = list.filter(p => (p.mode || '').toLowerCase().includes(search) || (p.ref || '').toLowerCase().includes(search) || (String(p.amount) || '').includes(search));
+      }
+
+      document.getElementById('paymentCount').innerText = `${list.length} shown • ${payments.length} total`;
+      const container = document.getElementById('paymentList');
+      container.innerHTML = '';
+      list.forEach(p => {
+        const col = document.createElement('div');
+        col.className = 'col-sm-6 col-lg-4';
+        col.innerHTML = `
+          <div class="card p-3 shadow-sm">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>${escapeHtml(p.mode)}</strong><br>
+                <div class="small-muted mt-1">Amount: $${escapeHtml(String(p.amount))}</div>
+                <div class="small-muted mt-1">Ref: ${escapeHtml(p.ref)}</div>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <button class="btn btn-sm btn-outline-warning" onclick="editPayment(${p.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deletePayment(${p.id})"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    function clearPaymentSearch() {
+      document.getElementById('paymentSearch').value = '';
+      localStorage.removeItem('paymentSearch_' + currentUser);
+      renderPayments();
+    }
+
+    // -------------------------
+    // Clear Searches
+    // -------------------------
+    function clearTodoSearch() {
+      document.getElementById('todoSearch').value = '';
+      localStorage.removeItem('todoSearch_' + currentUser);
+      renderTodos();
+    }
+
+    // -------------------------
+    // Navigation helper
+    // -------------------------
+    function showSection(sectionId) {
+      document.querySelectorAll('.content > div').forEach(div => div.classList.add('hidden'));
+      const el = document.getElementById(sectionId);
+      if (el) el.classList.remove('hidden');
+      // quick render when shown
+      if (sectionId === 'todos') renderTodos();
+      if (sectionId === 'members') renderMembers();
+      if (sectionId === 'payments') renderPayments();
+    }
+
+    // -------------------------
+    // Escape HTML helper
+    // -------------------------
+    function escapeHtml(unsafe) {
+      if (!unsafe && unsafe !== 0) return '';
+      return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // ensure that when login occurs we set UI to show dashboard
+    // and restore searches/filters that are persisted
+    // afterLogin() already loads data and calls restoreFiltersAndSearch & renders
+
+    // Also restore filters/search when the user logs in via rememberUser on load:
+    window.addEventListener('load', function () {
+      const remembered = localStorage.getItem('rememberUser');
+      if (remembered && !currentUser) {
+        currentUser = remembered;
+        afterLogin();
+      }
+    });
+  </script>
+</body>
+</html>
